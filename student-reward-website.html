@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Reward System</title>
+    <!-- Tailwind CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
+    <style>
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+
+        .header-card {
+            background: linear-gradient(to right, #3B82F6, #8B5CF6);
+            color: white;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 1rem;
+            background-color: #E5E7EB;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #3B82F6;
+            transition: width 0.3s ease;
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        .tab.active {
+            background-color: #3B82F6;
+            color: white;
+        }
+
+        .tab:not(.active) {
+            background-color: #E5E7EB;
+        }
+
+        .behavior-button {
+            transition: transform 0.2s;
+        }
+
+        .behavior-button:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <!-- Role Selector -->
+        <div class="p-4 flex gap-4 justify-center">
+            <button class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 active" onclick="switchView('teacher')">Teacher View</button>
+            <button class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300" onclick="switchView('student')">Student View</button>
+            <button class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300" onclick="switchView('parent')">Parent View</button>
+        </div>
+
+        <!-- Teacher View -->
+        <div id="teacher-view" class="view-section active max-w-6xl mx-auto p-6">
+            <div class="card header-card mb-6">
+                <h1 class="text-2xl font-bold">Subject-wise Student Reward Dashboard</h1>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="md:col-span-3">
+                    <!-- Subject Tabs -->
+                    <div class="flex mb-6 gap-2">
+                        <button class="tab active px-4 py-2 rounded-lg" onclick="switchSubject(this, 'Math')">Math</button>
+                        <button class="tab px-4 py-2 rounded-lg" onclick="switchSubject(this, 'Science')">Science</button>
+                        <button class="tab px-4 py-2 rounded-lg" onclick="switchSubject(this, 'English')">English</button>
+                    </div>
+
+                    <!-- Class Selector -->
+                    <div class="mb-6">
+                        <select id="class-selector" class="w-48 p-2 rounded-lg border" onchange="updateStudentList()">
+                            <option value="1">Grade 10A</option>
+                            <option value="2">Grade 10B</option>
+                            <option value="3">Grade 11A</option>
+                            <option value="4">Grade 11B</option>
+                        </select>
+                    </div>
+
+                    <!-- Student List -->
+                    <div id="student-list" class="space-y-6"></div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <h2 class="text-xl font-bold mb-4">Recent Activity</h2>
+                    <div id="recent-activity" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student View -->
+        <div id="student-view" class="view-section max-w-4xl mx-auto p-6">
+            <div class="card header-card mb-6">
+                <h1 class="text-2xl font-bold mb-2">Welcome, <span id="student-name"></span></h1>
+                <p class="text-lg">Current Points: <span id="student-points"></span></p>
+            </div>
+
+            <div class="card mb-6">
+                <h2 class="text-xl font-bold mb-4">Progress to Next Reward</h2>
+                <div class="progress-bar">
+                    <div id="progress-bar-fill" class="progress-bar-fill"></div>
+                </div>
+                <p class="text-sm text-gray-600 mt-2" id="progress-text"></p>
+            </div>
+
+            <div class="flex gap-4 mb-6">
+                <button class="tab active px-4 py-2 rounded-lg" onclick="switchStudentTab(this, 'rewards')">Rewards & Points</button>
+                <button class="tab px-4 py-2 rounded-lg" onclick="switchStudentTab(this, 'activity')">Recent Activity</button>
+            </div>
+
+            <div id="rewards-section">
+                <!-- Ways to Earn Points -->
+                <div class="card mb-6">
+                    <h2 class="text-xl font-bold mb-4">Ways to Earn Points</h2>
+                    <div id="earning-ways" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                </div>
+
+                <!-- Available Rewards -->
+                <div class="card">
+                    <h2 class="text-xl font-bold mb-4">Available Rewards</h2>
+                    <div id="voucher-list" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                </div>
+            </div>
+
+            <div id="activity-section" class="hidden">
+                <div class="card">
+                    <h2 class="text-xl font-bold mb-4">Recent Activity</h2>
+                    <div id="student-activity" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parent View -->
+        <div id="parent-view" class="view-section max-w-4xl mx-auto p-6">
+            <div class="card header-card mb-6">
+                <h1 class="text-2xl font-bold">Parent Dashboard</h1>
+                <p class="text-lg">Monitoring: <span id="monitored-student"></span></p>
+            </div>
+
+            <div class="card mb-6">
+                <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="bell"></i>
+                    New Notifications
+                </h2>
+                <div id="parent-notifications" class="space-y-4"></div>
+            </div>
+
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4">Student Progress</h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">Current Points</h3>
+                        <span id="parent-view-points" class="text-xl font-bold"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-semibold">Next Reward Progress</h3>
+                        <div class="w-1/2">
+                            <div class="progress-bar">
+                                <div id="parent-progress-bar" class="progress-bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Constants
+        const STUDENTS = {
+            1: [
+                { id: 101, name: 'John Smith', points: 450, parentId: 201 },
+                { id: 102, name: 'Sarah Johnson', points: 380, parentId: 202 },
+                { id: 103, name: 'Mike Brown', points: 420, parentId: 203 },
+            ],
+            2: [
+                { id: 201, name: 'Emma Davis', points: 390, parentId: 204 },
+                { id: 202, name: 'James Wilson', points: 410, parentId: 205 },
+                { id: 203, name: 'Lisa Anderson', points: 440, parentId: 206 },
+            ],
+        };
+
+        const BEHAVIOR_POINTS = [
+            { 
+                id: 1,
+                action: 'Disrupting Class',
+                points: -2,
+                icon: 'alert-circle',
+                type: 'negative',
+                category: 'Good Behavior'
+            },
+            {
+                id: 2,
+                action: 'Class Participation',
+                points: 2,
+                icon: 'star',
+                type: 'positive',
+                category: 'Classroom Engagement'
+            },
+            {
+                id: 3,
+                action: 'Difficult Question',
+                points: 3,
+                icon: 'trophy',
+                type: 'positive',
+                category: 'Classroom Engagement'
+            },
+            {
+                id: 4,
+                action: 'Forgot Homework',
+                points: -1,
+                icon: 'x-circle',
+                type: 'negative',
+                category: 'Homework'
+            },
+            {
+                id: 5,
+                action: 'Has Homework',
+                points: 1,
+                icon: 'check-circle',
+                type: 'positive',
+                category: 'Homework'
+            }
+        ];
+
+        const VOUCHER_OPTIONS = [
+            { id: 1, brand: 'Sephora', pointsCost: 200, image: 'https://via.placeholder.com/200' },
+            { id: 2, brand: 'Nike', pointsCost: 250, image: 'https://via.placeholder.com/200' },
+            { id: 3, brand: 'Adidas', pointsCost: 300, image: 'https://via.placeholder.com/200' },
+            { id: 4, brand: 'Carrefour', pointsCost: 150, image: 'https://via.placeholder.com/200' }
+        ];
+
+        // State
+        let currentView = 'teacher';
+        let currentSubject = 'Math';
+        let currentUserId = 101;
+        let recentActivity = [];
+        let notifications = [];
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // View switching
+        function switchView(view) {
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(`${view}-view`).classList.add('active');
+            
+            document.querySelectorAll('.role-selector button').forEach(btn => {
+                btn.classList.remove('bg-blue-500', 'text-white');
+                btn.classList.add('bg-gray-200');
+            });
+            event.target.classList.remove('bg-gray-200');
+            event.target.classList.add('bg-blue-500', 'text-white');
+
+            currentView = view;
+            if (view === 'student') {
+                updateStudentView();
+            } else if (view === 'parent') {
+                updateParentView();
+            }
+        }
+
+        // Subject switching
+        function switchSubject(element, subject) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            element.classList.add('active');
+            currentSubject = subject;
+            updateStudentList();
+        }
+
+        // Update student list
+        function updateStudentList() {
+            const classId = document.getElementById('class-selector').value;
+            const studentList = document.getElementById('student-list');
+            studentList.innerHTML = '';
+
+            const students = STUDENTS[classId] || [];
+            students.forEach(student => {
+                const studentCard = document.createElement('div');
+                studentCard.className = 'card';
+                studentCard.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">${student.name}</h3>
+                        <span class="text-blue-600 font-bold">${student.points} Points</span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        ${BEHAVIOR_POINTS.map(behavior => `
+                            <button 
+                                onclick="updatePoints(${student.id}, ${behavior.points}, '${behavior.action}', '${behavior.category}')"
+                                class="behavior-button px-4 py-2 rounded-lg ${behavior.type === 'negative' ? 'bg-red-500' : 'bg-green-500'} text-white flex flex-col items-center gap-1"
+                            >
+                                <i data-lucide="${behavior.icon}"></i>
+                                <span class="text-xs">${behavior.action}</span>
+                                <span class="text-xs">(${behavior.points > 0 ? '+' : ''}${behavior.points})</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                studentList.appendChild(studentCard);
+            });
+            lucide.createIcons();
+        }
+
+        // Update points and activity
+        function updatePoints(studentId, points, action, category) {
+            const student = Object.values(STUDENTS).flat().find(s => s.id === studentId);
+            if (student) {
+                student.points += points;
+                
+                const activity = {
+                    studentId,
+                    studentName: student.name,
+                    action,
+                    points,
+                    subject: currentSubject,
+                    timestamp: new Date().toLocaleTimeString()
+                };
+
+                recentActivity.unshift(activity);
+                recentActivity = recentActivity.slice(0, 5);
+                updateRecentActivity();
+
+                const notification = {
+                    title: `Points Update - ${category}`,
+                    message: `${student.name} ${points >= 0 ? 'earned' : 'lost'} ${Math.abs(points)} points for ${action} in ${current
